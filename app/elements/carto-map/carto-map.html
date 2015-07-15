@@ -1,0 +1,100 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<dom-module id="carto-map">
+  <style>
+    :host {
+      display: block;
+      width:100%;
+      height:100%;
+
+    }
+    #map{
+      width:100%;
+      height: 100%;
+      padding:0px;
+      margin:0px;
+    }
+  </style>
+  <template>
+    <div id=map></div>
+  </template>
+</dom-module>
+<script>
+  (function() {
+    Polymer({
+      is: 'carto-map',
+      properties: {
+        vizurl:{
+          type:String
+        },
+        viz:{
+          type: String
+          // value: "4b63a4e6-110f-11e5-8ac5-0e8dde98a187"
+        },
+        username:{
+          type: String
+          // value:'stuartlynn'
+        },
+        lat:{
+          type: Number,
+          notify:true
+        },
+        zoom:{
+          type: Number,
+          notify: true
+        },
+        lng:{
+          type: Number,
+          notify: true
+        }
+
+      },
+      updateLoc:function(){
+        this.nativeMap.setView(new L.LatLng(this.lat, this.lng), this.zoom)
+      },
+      mapMoved:function(e){
+        var center =this.nativeMap.getCenter()
+        this.lat  = center.lat
+        this.lng  = center.lng
+        console.log("this.lat ", this.lat , " this.lng ", this.lng)
+      },
+      constructURL(){
+        return 'https://'+this.username+'.cartodb.com/api/v2_1/viz/'+this.viz+'/viz.json'
+      },
+      createVizJSON(){
+        var url = this.vizurl ? this.vizurl : this.constructURL()
+        cartodb.createVis(this.$.map, url)
+                         .done(function(map){
+                           this.nativeMap = map.getNativeMap()
+                           this.map = map
+                           this.nativeMap.on("move", this.mapMoved.bind(this))
+                         }.bind(this))
+      },
+      constructBlankMap(){
+        var map = new L.Map('map_canvas', {
+          center: [0,0],
+          zoom: 2
+        });
+      },
+      ready:function(){
+        if(this.vizurl  || (this.username && this.viz)){
+          this.createVizJSON()
+        }
+        else{
+          this.constructBlankMap()
+        }
+      }
+    });
+  })();
+</script>
+
+<link rel="stylesheet" href="http://libs.cartocdn.com/cartodb.js/v3/3.14/themes/css/cartodb.css" />
+<script src="http://libs.cartocdn.com/cartodb.js/v3/3.14/cartodb.js"></script>
